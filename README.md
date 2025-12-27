@@ -1,352 +1,231 @@
-# Customer Churn Prediction MLOps Pipeline
+# Customer Churn Prediction Pipeline (Local MLOps)
 
-A production-grade machine learning operations (MLOps) pipeline for predicting customer churn, featuring automated training, experiment tracking, model registry, and real-time inference through a web application.
+A reproducible machine learning pipeline for customer churn prediction using ZenML, scikit-learn, MLflow, and Streamlit.
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://churn-pipeline-grcgpc5y4pu5glea3r2fwr.streamlit.app/)
-[![MLflow](https://img.shields.io/badge/MLflow-Tracking-blue)](https://dagshub.com/asmiverma/churn-pipeline.mlflow)
+This repository is designed to run on a local machine with local experiment tracking and local model artifacts.
 
-## Table of Contents
+## Project Overview
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Pipeline Components](#pipeline-components)
-- [Usage](#usage)
-- [Model Registry](#model-registry)
-- [Deployment](#deployment)
-- [API Reference](#api-reference)
-- [Contributing](#contributing)
-- [License](#license)
+This project implements an end-to-end churn workflow:
 
-## Overview
+1. Ingest data from CSV
+2. Clean and preprocess features
+3. Train a classification model
+4. Evaluate model metrics
+5. Deploy only if a quality threshold is met
+6. Run inference and serve predictions through a Streamlit app
 
-This project implements an end-to-end MLOps solution for customer churn prediction. It demonstrates industry best practices for:
+## What This Project Demonstrates
 
-- **Reproducible ML Pipelines**: Orchestrated workflows with ZenML
-- **Experiment Tracking**: Comprehensive logging with MLflow on DagsHub
-- **Model Versioning**: Centralized model registry for governance
-- **Automated Deployment**: Quality-gated production deployments
-- **Real-time Inference**: Interactive web application for predictions
+- Building modular ML steps and pipelines with ZenML
+- Running repeatable training and deployment workflows
+- Tracking experiments and runs with local MLflow
+- Registering and loading models through a local MLflow registry
+- Applying a quality gate before deployment
+- Serving predictions through an interactive Streamlit interface
+- Structuring an ML project for readability and maintainability
 
-### Key Features
+## Pipeline Flow
 
-- Automated data validation and preprocessing
-- Multiple model training with hyperparameter optimization
-- Quality gates ensuring only high-performing models reach production
-- Real-time single and batch predictions
-- Model performance monitoring and drift detection capabilities
+The core flow in code is:
 
-## Architecture
+Ingest -> Clean -> Train -> Evaluate -> Deploy
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              MLOps Pipeline Architecture                     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌────────────┐ │
-│  │   Data       │───▶│   Feature    │───▶│   Model      │───▶│  Model     │ │
-│  │   Ingestion  │    │   Engineering│    │   Training   │    │  Evaluation│ │
-│  └──────────────┘    └──────────────┘    └──────────────┘    └────────────┘ │
-│         │                   │                   │                   │        │
-│         ▼                   ▼                   ▼                   ▼        │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                         ZenML Orchestration                              ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│         │                   │                   │                   │        │
-│         ▼                   ▼                   ▼                   ▼        │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                    MLflow Experiment Tracking (DagsHub)                  ││
-│  │         Parameters │ Metrics │ Artifacts │ Model Registry                ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                      │                                       │
-│                                      ▼                                       │
-│                        ┌──────────────────────────┐                         │
-│                        │   Quality Gate (≥85%)    │                         │
-│                        └──────────────────────────┘                         │
-│                                      │                                       │
-│                          ┌───────────┴───────────┐                          │
-│                          ▼                       ▼                          │
-│                   ┌────────────┐          ┌────────────┐                    │
-│                   │   Deploy   │          │   Reject   │                    │
-│                   └────────────┘          └────────────┘                    │
-│                          │                                                   │
-│                          ▼                                                   │
-│                   ┌────────────────────────────────┐                        │
-│                   │   Streamlit Web Application    │                        │
-│                   │   (Real-time Predictions)      │                        │
-│                   └────────────────────────────────┘                        │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+- Training pipeline logs runs and metrics
+- Deployment pipeline applies an accuracy threshold (default 0.85)
+- Inference pipeline loads a model and writes predictions to CSV
 
-## Technology Stack
+## Tech Stack
 
-| Category | Technology | Purpose |
-|----------|------------|---------|
-| **ML Framework** | scikit-learn | Model training and inference |
-| **Pipeline Orchestration** | ZenML | ML workflow management |
-| **Experiment Tracking** | MLflow | Metrics, parameters, and artifact logging |
-| **Model Registry** | MLflow (DagsHub) | Model versioning and governance |
-| **Data Processing** | Pandas, NumPy | Data manipulation and analysis |
-| **Web Application** | Streamlit | Interactive prediction interface |
-| **Cloud Platform** | DagsHub | MLflow hosting and collaboration |
-| **Deployment** | Streamlit Cloud | Application hosting |
-| **Version Control** | Git, DVC | Code and data versioning |
+| Area                  | Tools          |
+| --------------------- | -------------- |
+| Language              | Python         |
+| Data                  | pandas, numpy  |
+| Modeling              | scikit-learn   |
+| Orchestration         | ZenML          |
+| Tracking and Registry | MLflow (local) |
+| UI                    | Streamlit      |
 
-## Project Structure
+## Repository Structure
 
-```
-churn-pipeline/
-├── app.py                      # Streamlit web application
-├── run_pipeline.py             # Main pipeline entry point
-├── run_experiments.py          # Experiment runner for model comparison
-├── requirements.txt            # Python dependencies
-│
+```text
+churn-pipeline-main/
+├── app.py
+├── run_pipeline.py
+├── run_experiments.py
+├── requirements.txt
+├── requirements-streamlit.txt
+├── extracted_data/
+│   └── customer_churn_dataset-testing-master.csv
 ├── pipelines/
-│   ├── trainning_pipeline.py   # Training pipeline definition
-│   ├── deployement_pipeline.py # Deployment pipeline with quality gates
-│   └── inference_pipeline.py   # Batch inference pipeline
-│
+│   ├── trainning_pipeline.py
+│   ├── deployement_pipeline.py
+│   └── inference_pipeline.py
 ├── steps/
-│   ├── ingest_data.py          # Data ingestion step
-│   ├── clean_data.py           # Data preprocessing step
-│   ├── train_model.py          # Model training step
-│   ├── evaluate_model.py       # Model evaluation step
-│   ├── deployment_steps.py     # Deployment-specific steps
-│   └── config.py               # Model configurations
-│
+│   ├── ingest_data.py
+│   ├── clean_data.py
+│   ├── train_model.py
+│   ├── evaluate_model.py
+│   ├── deployment_steps.py
+│   └── config.py
 ├── src/
-│   ├── ingest_util.py          # Data ingestion utilities
-│   ├── clean_util.py           # Data cleaning utilities
-│   ├── model_util.py           # Model training utilities
-│   └── evaluation_util.py      # Evaluation metrics utilities
-│
-├── data/
-│   └── customer_churn_dataset.zip
-│
-├── models/                     # Local model artifacts
-├── mlruns/                     # Local MLflow tracking (development)
-│
-├── analysis/
-│   └── churn_prediction.ipynb  # Exploratory data analysis
-│
-└── .streamlit/
-    └── secrets.toml            # Streamlit secrets (not in git)
+│   ├── ingest_util.py
+│   ├── clean_util.py
+│   ├── model_util.py
+│   └── evaluation_util.py
+└── analysis/
+    └── churn_prediction.ipynb
 ```
 
-## Installation
+## Local Setup
 
 ### Prerequisites
 
 - Python 3.10+
-- pip or conda package manager
 - Git
 
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/asmiverma/churn-pipeline.git
-   cd churn-pipeline
-   ```
-
-2. **Create and activate virtual environment**
-   ```bash
-   python -m venv env
-   source env/bin/activate  # On Windows: env\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Initialize ZenML**
-   ```bash
-   zenml init
-   ```
-
-5. **Configure DagsHub authentication** (for remote tracking)
-   ```bash
-   export DAGSHUB_USER_TOKEN="your-token"
-   ```
-
-## Pipeline Components
-
-### Training Pipeline
-
-The training pipeline handles model development and experimentation. It ingests raw data, validates and preprocesses it, trains the specified model, evaluates performance metrics, and logs everything to MLflow for tracking and comparison.
-
-### Deployment Pipeline
-
-The deployment pipeline includes quality gates to ensure only high-performing models reach production. Models must meet a minimum accuracy threshold (default 85%) before being registered in the model registry and deployed.
-
-### Supported Models
-
-| Model | Configuration Key | Default Hyperparameters |
-|-------|-------------------|------------------------|
-| Random Forest | `RandomForest` | n_estimators=100, max_depth=None |
-| Logistic Regression | `LogisticRegression` | C=1.0, max_iter=100 |
-| Gradient Boosting | `GradientBoosting` | n_estimators=100, learning_rate=0.1 |
-| Support Vector Machine | `SVM` | C=1.0, kernel='rbf' |
-
-## Usage
-
-### Running the Training Pipeline
+### 1) Clone and enter project
 
 ```bash
-# Train with default settings (Gradient Boosting)
-python run_pipeline.py --mode train
-
-# Train with specific model
-python run_pipeline.py --mode train --model RandomForest
+git clone https://github.com/asmiverma/churn-pipeline.git
+cd churn-pipeline
 ```
 
-### Running Experiments
+### 2) Create and activate virtual environment
 
-Compare multiple models and hyperparameter configurations:
+Windows (PowerShell):
+
+```powershell
+python -m venv env
+.\env\Scripts\Activate.ps1
+```
+
+macOS/Linux:
 
 ```bash
-python run_experiments.py
+python -m venv env
+source env/bin/activate
 ```
 
-This executes predefined experiments including:
-- Random Forest (baseline, deep trees, shallow trees)
-- Logistic Regression (baseline, high regularization)
-- Gradient Boosting (baseline, slow learner, fast learner)
-
-### Deploying a Model
+### 3) Install dependencies
 
 ```bash
-# Deploy with default 85% accuracy threshold
-python run_pipeline.py --mode deploy
-
-# Deploy with custom threshold
-python run_pipeline.py --mode deploy --min-accuracy 0.90
+pip install -r requirements.txt
 ```
 
-### Running Inference
+### 4) Initialize ZenML
+
+```bash
+zenml init
+```
+
+## Important Local Configuration
+
+Two scripts currently use hardcoded dataset paths and should be updated before running:
+
+- run_pipeline.py -> DATA_PATH
+- run_experiments.py -> FILE_PATH
+
+Set each path to your local CSV file, for example:
+
+- extracted_data/customer_churn_dataset-testing-master.csv
+
+## How to Run Locally
+
+### 1) Start MLflow UI (local tracking)
+
+In a separate terminal, from the project root:
+
+```bash
+mlflow ui --backend-store-uri ./mlruns --port 5000
+```
+
+Then open:
+
+- http://127.0.0.1:5000
+
+### 2) Run training pipeline
+
+```bash
+python run_pipeline.py --mode train --model GradientBoosting
+```
+
+Other model names available in code:
+
+- RandomForest
+- LogisticRegression
+- GradientBoosting
+- SVMS
+
+### 3) Run deployment pipeline (quality-gated)
+
+```bash
+python run_pipeline.py --mode deploy --model GradientBoosting --min-accuracy 0.85
+```
+
+If the model passes the threshold:
+
+- A local model artifact is saved under models/deployed_YYYYMMDD_HHMMSS/
+- Metadata is saved alongside the model
+- The run is recorded in MLflow
+
+### 4) Run inference pipeline
 
 ```bash
 python run_pipeline.py --mode inference
 ```
 
-### Launching the Web Application
+Predictions are written to:
+
+- predictions/predictions_YYYYMMDD_HHMMSS.csv
+
+### 5) Run experiment suite
+
+```bash
+python run_experiments.py
+```
+
+This runs multiple predefined model configurations for comparison.
+
+### 6) Launch Streamlit app
 
 ```bash
 streamlit run app.py
 ```
 
-## Model Registry
+The app supports:
 
-Models are registered and versioned in MLflow hosted on DagsHub:
+- Single-customer prediction
+- Batch CSV prediction
+- Downloadable prediction output
 
-- **Registry URL**: [https://dagshub.com/asmiverma/churn-pipeline.mlflow](https://dagshub.com/asmiverma/churn-pipeline.mlflow)
-- **Model Name**: `churn_predictor_model`
+## Local MLflow and Model Registry Notes
 
-### Model Lifecycle
+- MLflow artifacts and run metadata are stored locally in mlruns/
+- Deployment uses a registered model name churn_predictor in pipeline code
+- Inference loads the latest registered model by default
+- Streamlit can also load from local model artifact folders as fallback
 
-1. **Training**: Models are trained and logged with metrics
-2. **Evaluation**: Performance is assessed against quality thresholds
-3. **Registration**: Passing models are registered in the model registry
-4. **Deployment**: Registered models are deployed to production
+## Reproducibility Notes
 
-## Deployment
+- Data split uses a fixed random_state (42) in preprocessing utilities
+- Pipeline steps are separated and version-controlled for consistent reruns
+- Local artifacts and metrics are saved so runs can be inspected and compared
 
-### Streamlit Cloud Deployment
+## Current Limitations
 
-The application is deployed on Streamlit Cloud with the following configuration:
+- Dataset paths are hardcoded in two entry scripts and should be edited locally
+- Test coverage is currently minimal
+- Error handling can be strengthened for path and schema validation
 
-1. **Repository**: Connected to GitHub repository
-2. **Main file**: `app.py`
-3. **Requirements**: `requirements-streamlit.txt`
+## Future Improvements
 
-### Environment Variables
-
-Configure the following secrets in Streamlit Cloud:
-
-| Variable | Description |
-|----------|-------------|
-| `DAGSHUB_USER_TOKEN` | DagsHub authentication token |
-| `DAGSHUB_USERNAME` | DagsHub username |
-
-### Live Application
-
-Access the deployed application: [https://churn-pipeline-grcgpc5y4pu5glea3r2fwr.streamlit.app/](https://churn-pipeline-grcgpc5y4pu5glea3r2fwr.streamlit.app/)
-
-## API Reference
-
-### Prediction Input Features
-
-| Feature | Type | Description | Range |
-|---------|------|-------------|-------|
-| Gender | Categorical | Customer gender | Male, Female |
-| Age | Integer | Customer age | 18-80 |
-| Tenure | Integer | Months as customer | 1-60 |
-| Usage Frequency | Integer | Monthly usage count | 1-30 |
-| Support Calls | Integer | Support tickets raised | 0-10 |
-| Payment Delay | Integer | Days of payment delay | 0-30 |
-| Subscription Type | Categorical | Plan type | Basic, Standard, Premium |
-| Contract Length | Categorical | Contract duration | Monthly, Quarterly, Annual |
-| Total Spend | Float | Total amount spent ($) | 0-10000 |
-| Last Interaction | Integer | Days since last interaction | 1-30 |
-
-### Prediction Output
-
-| Field | Type | Description |
-|-------|------|-------------|
-| Prediction | String | "Churn" or "No Churn" |
-| Churn Probability | Float | Probability score (0.0 - 1.0) |
-| Risk Factors | List | Identified risk factors for the customer |
-
-## Metrics and Monitoring
-
-### Model Performance Metrics
-
-- **Accuracy**: Overall prediction correctness
-- **Precision**: True positive rate among positive predictions
-- **Recall**: True positive rate among actual positives
-- **F1 Score**: Harmonic mean of precision and recall
-- **ROC-AUC**: Area under the receiver operating characteristic curve
-
-### Experiment Tracking
-
-All experiments are tracked in MLflow with hyperparameters, performance metrics, model artifacts, and training metadata.
-
-View experiments: [MLflow Dashboard](https://dagshub.com/asmiverma/churn-pipeline.mlflow)
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow PEP 8 style guidelines
-- Add unit tests for new functionality
-- Update documentation as needed
-- Ensure all pipelines pass before submitting PR
+- Replace hardcoded data paths with CLI arguments or environment variables
+- Add unit and integration tests for all pipeline steps
+- Add data validation contracts before training/inference
+- Add model drift monitoring on new inference batches
+- Add CI checks for linting, tests, and reproducibility checks
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [ZenML](https://zenml.io/) for ML pipeline orchestration
-- [MLflow](https://mlflow.org/) for experiment tracking
-- [DagsHub](https://dagshub.com/) for MLflow hosting
-- [Streamlit](https://streamlit.io/) for the web application framework
-
----
-
-**Author**: Asmi  
-**Contact**: [GitHub](https://github.com/asmiverma)  
-**Project Link**: [https://github.com/asmiverma/churn-pipeline](https://github.com/asmiverma/churn-pipeline)
+This project is licensed under the MIT License.
